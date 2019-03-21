@@ -1,0 +1,3 @@
+syntax: glob
+.vscode/.BROWSE.C_CPP.DB
+.pioenvs/*
