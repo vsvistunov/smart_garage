@@ -84,7 +84,7 @@ void loop() {
     prev_mqtt_send = millis();
     if (dist > 500 or dist <= 0) dist = -10;
     Serial.println ("Publish /ESP_Easy_garage/sensors/distance/," + String(dist));
-    Serial.println ("Publish /ESP_Easy_garage/sensors/distance/," + String(tempC));
+    Serial.println ("Publish /ESP_Easy_garage/sensors/temperature_01/," + String(tempC));
   }
 /*
   if (millis() - prev_lcd_send > lcd_interval) {
