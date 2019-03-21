@@ -44,20 +44,20 @@ void setup() {
   Serial.begin(9600);
 
   sensors.begin();
-  Serial.print("Found ");
+  Serial.print(F("Found "));
   Serial.print(sensors.getDeviceCount(), DEC);
-  Serial.println(" devices.");
+  Serial.println(F(" devices."));
   // Search for devices on the bus and assign based on an index. Ideally,
   // you would do this to initially discover addresses on the bus and then 
   // use those addresses and manually assign them (see above) once you know 
   // the devices on your bus (and assuming they don't change).
-  if (!sensors.getAddress(insideThermometer, 0)) Serial.println("Unable to find address for Device 0");
+  if (!sensors.getAddress(insideThermometer, 0)) Serial.println(F("Unable to find address for Device 0"));
   // show the addresses we found on the bus
-  Serial.print("Device 0 Address: ");
+  Serial.print(F("Device 0 Address: "));
   printAddress(insideThermometer);
   Serial.println();
   sensors.setResolution(insideThermometer, 10);
-  Serial.print("Device 0 Resolution: ");
+  Serial.print(F("Device 0 Resolution: "));
   Serial.print(sensors.getResolution(insideThermometer), DEC); 
   Serial.println();
   //lcd.init();
@@ -83,8 +83,10 @@ void loop() {
   if (millis() - prev_mqtt_send > mqtt_interval) {
     prev_mqtt_send = millis();
     if (dist > 500 or dist <= 0) dist = -10;
-    Serial.println ("Publish /ESP_Easy_garage/sensors/distance/," + String(dist));
-    Serial.println ("Publish /ESP_Easy_garage/sensors/temperature_01/," + String(tempC));
+    Serial.print (F("Publish /ESP_Easy_garage/sensors/distance/,"));
+    Serial.println (String(dist));
+    Serial.print (F("Publish /ESP_Easy_garage/sensors/temperature_01/,"));
+    Serial.println (String(tempC));
   }
 /*
   if (millis() - prev_lcd_send > lcd_interval) {
@@ -97,7 +99,9 @@ void loop() {
   if (millis() - prev_thingspeak_send > thingspeak_interval) {
     prev_thingspeak_send = millis();
     if (dist > 500 or dist <= 0) dist = -10;
-    Serial.println ("SendToHTTP 18.214.44.70,80,/update?api_key=JXQQ3PQWSTJK87EY&field1=" + String(dist)+"&field2=" + String(tempC));
+    Serial.print(F("SendToHTTP 18.214.44.70,80,/update?api_key=JXQQ3PQWSTJK87EY&field1="));
+    Serial.print(String(dist));
+    Serial.print(F("&field2="));
+    Serial.println (String(tempC));
   }
-
 }
