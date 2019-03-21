@@ -6,6 +6,8 @@
             "includePath": [
                 "C:/Users/Svistunov-VA/.platformio/packages/framework-arduinoavr/cores/arduino",
                 "C:/Users/Svistunov-VA/.platformio/packages/framework-arduinoavr/variants/eightanaloginputs",
+                "c:/Users/Svistunov-VA/Documents/PlatformIO/Projects/Smart_garage/.piolibdeps/DallasTemperature_ID54",
+                "c:/Users/Svistunov-VA/Documents/PlatformIO/Projects/Smart_garage/.piolibdeps/OneWire_ID1",
                 "C:/Users/Svistunov-VA/.platformio/packages/framework-arduinoavr/libraries/__cores__/arduino/EEPROM/src",
                 "C:/Users/Svistunov-VA/.platformio/packages/framework-arduinoavr/libraries/__cores__/arduino/HID/src",
                 "C:/Users/Svistunov-VA/.platformio/packages/framework-arduinoavr/libraries/__cores__/arduino/SPI/src",
@@ -43,6 +45,8 @@
                 "path": [
                     "C:/Users/Svistunov-VA/.platformio/packages/framework-arduinoavr/cores/arduino",
                     "C:/Users/Svistunov-VA/.platformio/packages/framework-arduinoavr/variants/eightanaloginputs",
+                    "c:/Users/Svistunov-VA/Documents/PlatformIO/Projects/Smart_garage/.piolibdeps/DallasTemperature_ID54",
+                    "c:/Users/Svistunov-VA/Documents/PlatformIO/Projects/Smart_garage/.piolibdeps/OneWire_ID1",
                     "C:/Users/Svistunov-VA/.platformio/packages/framework-arduinoavr/libraries/__cores__/arduino/EEPROM/src",
                     "C:/Users/Svistunov-VA/.platformio/packages/framework-arduinoavr/libraries/__cores__/arduino/HID/src",
                     "C:/Users/Svistunov-VA/.platformio/packages/framework-arduinoavr/libraries/__cores__/arduino/SPI/src",

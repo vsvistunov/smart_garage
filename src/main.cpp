@@ -5,6 +5,8 @@
 //#include <LiquidCrystal_I2C.h>
 //LiquidCrystal_I2C lcd(0x27,16,2); // set the LCD address to 0x27 for a 16 chars and 2 line display
 
+
+//пин шины 1-Wire
 const int ONE_WIRE_BUS=2;
 const int trig = 6;
 const int echo = 7;
@@ -34,8 +36,6 @@ void printAddress(DeviceAddress deviceAddress)
   }
 }
 
-
-
 void setup() {
   // put your setup code here, to run once:
   pinMode(trig, OUTPUT);
@@ -64,9 +64,7 @@ void setup() {
   //lcd.backlight();
 
   delay(500);
-
 }
-
 
 void loop() {
   // put your main code here, to run repeatedly:
@@ -101,5 +99,5 @@ void loop() {
     if (dist > 500 or dist <= 0) dist = -10;
     Serial.println ("SendToHTTP 18.214.44.70,80,/update?api_key=JXQQ3PQWSTJK87EY&field1=" + String(dist)+"&field2=" + String(tempC));
   }
- 
+
 }
