@@ -24,8 +24,8 @@ OneWire ds(ONE_WIRE_BUS);
 byte addr[1][8] = {0x28,0xFF,0x85,0xD0,0x90,0x15,0x01,0x35};
 //массив для хранения температур
 float Temp[1];
-//флаг операции
-byte flagDallRead;
+//
+
 
 
 //***Функция считывания температуры c Далласов*****
@@ -39,7 +39,6 @@ void dallRead(unsigned long interval){
     ds.reset();
     ds.write(0xCC); //Обращение ко всем датчикам
     ds.write(0x44); //Команда на конвертацию
-    flagDallRead = 1; //Время возврата в секундах
   }
   else {
     byte i;
@@ -49,8 +48,7 @@ void dallRead(unsigned long interval){
      ds.select(addr[i]);
      ds.write(0xBE); //Считывание значения с датчика
      temp = (ds.read() | ds.read()<<8); //Принимаем два байта температуры
-     Temp[i] = (float)temp / 16.0; 
-     flagDallRead = 2; //Время возврата в секундах
+     Temp[i] = (float)temp / 16.0;
      }
    }
   }
@@ -83,7 +81,7 @@ void loop() {
   time = pulseIn(echo, HIGH);
   dist = (time/2) / 29.1;
 
-  dallRead(flagDallRead * 1000);
+  dallRead(2000);
 
   if (millis() - prev_mqtt_send > mqtt_interval) {
     prev_mqtt_send = millis();
