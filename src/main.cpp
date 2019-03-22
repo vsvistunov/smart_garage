@@ -8,16 +8,15 @@
 
 //пин шины 1-Wire
 const int ONE_WIRE_BUS=2;
+
+//пины УЗ-датчика
 const int trig = 6;
 const int echo = 7;
-const long temperature_interval = 5000;
+
+//интервал отправки данных по mqtt (default = 5000 ms)
 const long mqtt_interval = 5000;
+//интервал отправки данных на thingspeak (default = 60000 ms)
 const long thingspeak_interval = 60000;
-//const long lcd_interval = 1000;
-long time, dist;
-unsigned long prev_mqtt_send = 0;
-unsigned long prev_thingspeak_send = 0;
-//unsigned long prev_lcd_send = 0;
 
 // Setup a oneWire instance to communicate with any OneWire devices (not just Maxim/Dallas temperature ICs)
 OneWire oneWire(ONE_WIRE_BUS);
@@ -44,9 +43,9 @@ void setup() {
   Serial.begin(9600);
 
   sensors.begin();
-  Serial.print(F("Found "));
-  Serial.print(sensors.getDeviceCount(), DEC);
-  Serial.println(F(" devices."));
+  //Serial.print(F("Found "));
+  //Serial.print(sensors.getDeviceCount(), DEC);
+  //Serial.println(F(" devices."));
   // Search for devices on the bus and assign based on an index. Ideally,
   // you would do this to initially discover addresses on the bus and then 
   // use those addresses and manually assign them (see above) once you know 
@@ -57,23 +56,25 @@ void setup() {
   printAddress(insideThermometer);
   Serial.println();
   sensors.setResolution(insideThermometer, 10);
-  Serial.print(F("Device 0 Resolution: "));
-  Serial.print(sensors.getResolution(insideThermometer), DEC); 
-  Serial.println();
+  //Serial.print(F("Device 0 Resolution: "));
+  //Serial.print(sensors.getResolution(insideThermometer), DEC); 
+  //Serial.println();
   //lcd.init();
   //lcd.backlight();
 
-  delay(500);
+  delay(100);
 }
 
 void loop() {
-  // put your main code here, to run repeatedly:
+  long time, dist;
+  static unsigned long prev_mqtt_send = 0;
+  static unsigned long prev_thingspeak_send = 0;
+  
   digitalWrite(trig, LOW);
   delayMicroseconds(2);
   digitalWrite(trig, HIGH);
   delayMicroseconds(10);
   digitalWrite(trig, LOW);
-
   time = pulseIn(echo, HIGH);
   dist = (time/2) / 29.1;
 
