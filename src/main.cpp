@@ -22,18 +22,12 @@ const long thingspeak_interval = 60000;
 OneWire oneWire(ONE_WIRE_BUS);
 // Pass our oneWire reference to Dallas Temperature. 
 DallasTemperature sensors(&oneWire);
-// arrays to hold device address
-DeviceAddress insideThermometer;
 
-// function to print a device address
-void printAddress(DeviceAddress deviceAddress)
-{
-  for (uint8_t i = 0; i < 8; i++)
-  {
-    if (deviceAddress[i] < 16) Serial.print("0");
-    Serial.print(deviceAddress[i], HEX);
-  }
-}
+//массив для хранения адресов датчиков
+byte dallasAddr [1] [8] = {0x28,0xFF,0x85,0xD0,0x90,0x15,0x01,0x35};
+//массив для хранения температуры
+float Temp[1];
+
 
 void setup() {
   // put your setup code here, to run once:
@@ -43,26 +37,29 @@ void setup() {
   Serial.begin(9600);
 
   sensors.begin();
-  //Serial.print(F("Found "));
-  //Serial.print(sensors.getDeviceCount(), DEC);
-  //Serial.println(F(" devices."));
-  // Search for devices on the bus and assign based on an index. Ideally,
-  // you would do this to initially discover addresses on the bus and then 
-  // use those addresses and manually assign them (see above) once you know 
-  // the devices on your bus (and assuming they don't change).
-  if (!sensors.getAddress(insideThermometer, 0)) Serial.println(F("Unable to find address for Device 0"));
-  // show the addresses we found on the bus
-  Serial.print(F("Device 0 Address: "));
-  printAddress(insideThermometer);
-  Serial.println();
-  sensors.setResolution(insideThermometer, 10);
-  //Serial.print(F("Device 0 Resolution: "));
-  //Serial.print(sensors.getResolution(insideThermometer), DEC); 
-  //Serial.println();
-  //lcd.init();
-  //lcd.backlight();
-
+  sensors.setResolution(10);
+  sensors.setWaitForConversion(false);
+  
   delay(100);
+}
+
+//функция опроса датчиков ds18b20
+void DallasRead() {
+  static unsigned long prev_ds18b20_time = 0;
+  if (millis() - prev_ds18b20_time > 2000) {
+    static boolean flagDallas = 0;
+    prev_ds18b20_time = millis();
+    flagDallas = !flagDallas;
+    if (flagDallas) {
+      sensors.requestTemperatures(); // Send the command to get temperatures
+    }
+    else {
+      byte i;
+      for (i=0; i < 1; i++) {
+        Temp[i] = sensors.getTempC(dallasAddr[i]);
+      }
+    }
+  }
 }
 
 void loop() {
@@ -78,8 +75,7 @@ void loop() {
   time = pulseIn(echo, HIGH);
   dist = (time/2) / 29.1;
 
-  sensors.requestTemperatures(); // Send the command to get temperatures
-  float tempC = sensors.getTempC(insideThermometer);
+  DallasRead();
 
   if (millis() - prev_mqtt_send > mqtt_interval) {
     prev_mqtt_send = millis();
@@ -87,22 +83,15 @@ void loop() {
     Serial.print (F("Publish /ESP_Easy_garage/sensors/distance/,"));
     Serial.println (String(dist));
     Serial.print (F("Publish /ESP_Easy_garage/sensors/temperature_01/,"));
-    Serial.println (String(tempC));
+    Serial.println (String(Temp[0]));
   }
-/*
-  if (millis() - prev_lcd_send > lcd_interval) {
-    lcd.clear();
-    prev_lcd_send = millis();
-    if (dist > 500 or dist <= 0) lcd.print("Out of Range");
-    else lcd.print(dist);
-  }
-*/
+
   if (millis() - prev_thingspeak_send > thingspeak_interval) {
     prev_thingspeak_send = millis();
     if (dist > 500 or dist <= 0) dist = -10;
     Serial.print(F("SendToHTTP 18.214.44.70,80,/update?api_key=JXQQ3PQWSTJK87EY&field1="));
     Serial.print(String(dist));
     Serial.print(F("&field2="));
-    Serial.println (String(tempC));
+    Serial.println (String(Temp[0]));
   }
 }
