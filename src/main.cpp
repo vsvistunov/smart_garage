@@ -1,10 +1,9 @@
 #include <Arduino.h>
 #include <OneWire.h>
-#include <DallasTemperature.h>
+
 //#include <Wire.h>
 //#include <LiquidCrystal_I2C.h>
 //LiquidCrystal_I2C lcd(0x27,16,2); // set the LCD address to 0x27 for a 16 chars and 2 line display
-
 
 //пин шины 1-Wire
 const int ONE_WIRE_BUS=2;
@@ -19,21 +18,44 @@ const long mqtt_interval = 5000;
 const long thingspeak_interval = 60000;
 
 // Setup a oneWire instance to communicate with any OneWire devices (not just Maxim/Dallas temperature ICs)
-OneWire oneWire(ONE_WIRE_BUS);
-// Pass our oneWire reference to Dallas Temperature. 
-DallasTemperature sensors(&oneWire);
-// arrays to hold device address
-DeviceAddress insideThermometer;
+OneWire ds(ONE_WIRE_BUS);
 
-// function to print a device address
-void printAddress(DeviceAddress deviceAddress)
-{
-  for (uint8_t i = 0; i < 8; i++)
-  {
-    if (deviceAddress[i] < 16) Serial.print("0");
-    Serial.print(deviceAddress[i], HEX);
+//массив для хранения адресов датчиков
+byte addr[1][8] = {0x28,0xFF,0x85,0xD0,0x90,0x15,0x01,0x35};
+//массив для хранения температур
+float Temp[1];
+//флаг операции
+byte flagDallRead;
+
+
+//***Функция считывания температуры c Далласов*****
+void dallRead(unsigned long interval){
+  static unsigned long prevTime = 0;
+  if (millis() - prevTime > interval) { //Проверка заданного интервала
+  static boolean flagDall = 0; //Признак операции
+  prevTime = millis();
+  flagDall =! flagDall; //Инверсия признака
+  if (flagDall) {
+    ds.reset();
+    ds.write(0xCC); //Обращение ко всем датчикам
+    ds.write(0x44); //Команда на конвертацию
+    flagDallRead = 1; //Время возврата в секундах
+  }
+  else {
+    byte i;
+     int temp;
+    for (i = 0; i < 1; i++){ //Перебор количества датчиков
+     ds.reset();
+     ds.select(addr[i]);
+     ds.write(0xBE); //Считывание значения с датчика
+     temp = (ds.read() | ds.read()<<8); //Принимаем два байта температуры
+     Temp[i] = (float)temp / 16.0; 
+     flagDallRead = 2; //Время возврата в секундах
+     }
+   }
   }
 }
+//--------------------------------------------------
 
 void setup() {
   // put your setup code here, to run once:
@@ -42,23 +64,6 @@ void setup() {
 
   Serial.begin(9600);
 
-  sensors.begin();
-  //Serial.print(F("Found "));
-  //Serial.print(sensors.getDeviceCount(), DEC);
-  //Serial.println(F(" devices."));
-  // Search for devices on the bus and assign based on an index. Ideally,
-  // you would do this to initially discover addresses on the bus and then 
-  // use those addresses and manually assign them (see above) once you know 
-  // the devices on your bus (and assuming they don't change).
-  if (!sensors.getAddress(insideThermometer, 0)) Serial.println(F("Unable to find address for Device 0"));
-  // show the addresses we found on the bus
-  Serial.print(F("Device 0 Address: "));
-  printAddress(insideThermometer);
-  Serial.println();
-  sensors.setResolution(insideThermometer, 10);
-  //Serial.print(F("Device 0 Resolution: "));
-  //Serial.print(sensors.getResolution(insideThermometer), DEC); 
-  //Serial.println();
   //lcd.init();
   //lcd.backlight();
 
@@ -78,8 +83,7 @@ void loop() {
   time = pulseIn(echo, HIGH);
   dist = (time/2) / 29.1;
 
-  sensors.requestTemperatures(); // Send the command to get temperatures
-  float tempC = sensors.getTempC(insideThermometer);
+  dallRead(flagDallRead * 1000);
 
   if (millis() - prev_mqtt_send > mqtt_interval) {
     prev_mqtt_send = millis();
@@ -87,7 +91,7 @@ void loop() {
     Serial.print (F("Publish /ESP_Easy_garage/sensors/distance/,"));
     Serial.println (String(dist));
     Serial.print (F("Publish /ESP_Easy_garage/sensors/temperature_01/,"));
-    Serial.println (String(tempC));
+    Serial.println (String(Temp[0]));
   }
 /*
   if (millis() - prev_lcd_send > lcd_interval) {
@@ -103,6 +107,6 @@ void loop() {
     Serial.print(F("SendToHTTP 18.214.44.70,80,/update?api_key=JXQQ3PQWSTJK87EY&field1="));
     Serial.print(String(dist));
     Serial.print(F("&field2="));
-    Serial.println (String(tempC));
+    Serial.println (String(Temp[0]));
   }
 }
