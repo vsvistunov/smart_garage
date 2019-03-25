@@ -12,6 +12,19 @@ const int ONE_WIRE_BUS=2;
 const int trig = 6;
 const int echo = 7;
 
+//пины реле
+const int rel_01 = 3;
+const int rel_02 = 4;
+
+//максимальный и минимальный уровни жидости
+const long dist_max = 30;
+const long dist_min = 20;
+
+//максимальный и минимальный уровни температуры
+const float temp_max = 30;
+const float temp_min = 26;
+
+
 //интервал отправки данных по mqtt (default = 5000 ms)
 const long mqtt_interval = 5000;
 //интервал отправки данных на thingspeak (default = 60000 ms)
@@ -60,6 +73,11 @@ void setup() {
   pinMode(trig, OUTPUT);
   pinMode(echo, INPUT);
 
+  pinMode(rel_01, OUTPUT);
+  digitalWrite(rel_01,HIGH);
+  pinMode(rel_02, OUTPUT);
+  digitalWrite(rel_02,HIGH);
+
   Serial.begin(9600);
 
   //lcd.init();
@@ -67,6 +85,16 @@ void setup() {
 
   delay(100);
 }
+
+
+void relay_control (int rel_ID, int state) {
+  rel_ID = rel_ID + 2;
+  if (digitalRead(rel_ID) != state) {
+    digitalWrite(rel_ID,state);
+  }
+}
+
+
 
 void loop() {
   long time, dist;
@@ -82,6 +110,16 @@ void loop() {
   dist = (time/2) / 29.1;
 
   dallRead(2000);
+
+
+  //переключение реле по уровню жидкости
+  if (dist < dist_min && dist > 0) relay_control (1,LOW);
+  else if (dist > dist_max && dist > 0) relay_control (1,HIGH); 
+
+  //переключение реле по датчику температуры
+  if (Temp[1] < temp_min) relay_control (2,LOW);
+  else if (Temp[1] > temp_max) relay_control (2,HIGH);
+
 
   if (millis() - prev_mqtt_send > mqtt_interval) {
     prev_mqtt_send = millis();

@@ -93,5 +93,6 @@
             "cppStandard": "c++11",
             "compilerPath": "C:/Users/Svistunov-VA/.platformio/packages/toolchain-atmelavr/bin/avr-gcc.exe -mmcu=atmega168"
         }
-    ]
+    ],
+    "version": 4
 }
