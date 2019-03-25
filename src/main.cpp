@@ -21,9 +21,9 @@ const long thingspeak_interval = 60000;
 OneWire ds(ONE_WIRE_BUS);
 
 //массив для хранения адресов датчиков
-byte addr[1][8] = {0x28,0xFF,0x85,0xD0,0x90,0x15,0x01,0x35};
+byte addr[2][8] = {{0x28,0xFF,0x85,0xD0,0x90,0x15,0x01,0x35},{0x28,0xD5,0xBF,0x7F,0x6,0x0,0x0,0xF2}};
 //массив для хранения температур
-float Temp[1];
+float Temp[2];
 //
 
 
@@ -43,7 +43,7 @@ void dallRead(unsigned long interval){
   else {
     byte i;
      int temp;
-    for (i = 0; i < 1; i++){ //Перебор количества датчиков
+    for (i = 0; i < 2; i++){ //Перебор количества датчиков
      ds.reset();
      ds.select(addr[i]);
      ds.write(0xBE); //Считывание значения с датчика
@@ -90,6 +90,8 @@ void loop() {
     Serial.println (String(dist));
     Serial.print (F("Publish /ESP_Easy_garage/sensors/temperature_01/,"));
     Serial.println (String(Temp[0]));
+    Serial.print (F("Publish /ESP_Easy_garage/sensors/temperature_02/,"));
+    Serial.println (String(Temp[1]));
   }
 /*
   if (millis() - prev_lcd_send > lcd_interval) {
@@ -105,6 +107,8 @@ void loop() {
     Serial.print(F("SendToHTTP 18.214.44.70,80,/update?api_key=JXQQ3PQWSTJK87EY&field1="));
     Serial.print(String(dist));
     Serial.print(F("&field2="));
-    Serial.println (String(Temp[0]));
+    Serial.print(String(Temp[0]));
+    Serial.print(F("&field3="));
+    Serial.println(String(Temp[1]));
   }
 }
