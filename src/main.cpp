@@ -98,16 +98,22 @@ void relay_control (int rel_ID, int state) {
 
 void loop() {
   long time, dist;
+  static unsigned long prev_pulse_send = 0;
   static unsigned long prev_mqtt_send = 0;
   static unsigned long prev_thingspeak_send = 0;
   
-  digitalWrite(trig, LOW);
-  delayMicroseconds(2);
-  digitalWrite(trig, HIGH);
-  delayMicroseconds(10);
-  digitalWrite(trig, LOW);
-  time = pulseIn(echo, HIGH);
-  dist = (time/2) / 29.1;
+  //замеряем дистанцию каждые 500 мс
+  if (millis() - prev_pulse_send > 500) {
+    prev_pulse_send = millis();
+    digitalWrite(trig, LOW);
+    delayMicroseconds(2);
+    digitalWrite(trig, HIGH);
+    delayMicroseconds(10);
+    digitalWrite(trig, LOW);
+    time = pulseIn(echo, HIGH);
+    dist = (time/2) / 29.1;
+  }
+
 
   dallRead(2000);
 
