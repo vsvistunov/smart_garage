@@ -40,30 +40,69 @@ float Temp[2];
 //
 
 
+// медианный фильтр по трем значениям
+float middle_of_3(int a, int b, int c) {
+  int middle;
+  if ((a <= b) && (a <= c)) {
+    middle = (b <= c) ? b : c;
+  }
+  else {
+    if ((b <= a) && (b <= c)) {
+      middle = (a <= c) ? a : c;
+    }
+    else {
+      middle = (a <= b) ? a : b;
+    }
+  }
+  return middle;
+}
+
 
 //***Функция считывания температуры c Далласов*****
 void dallRead(unsigned long interval){
   static unsigned long prevTime = 0;
+  static int temp_unfiltered[3][2]; //массив для хранения температур с двух датчиков, в каждый столбец по три значения
+  static byte i = 0; // индекс строки массива неотфильтрованных температур temp_unfiltered[i][j]
+  int temp_filtered; //результат работы медианного фильтра по  
+
   if (millis() - prevTime > interval) { //Проверка заданного интервала
-  static boolean flagDall = 0; //Признак операции
-  prevTime = millis();
-  flagDall =! flagDall; //Инверсия признака
-  if (flagDall) {
-    ds.reset();
-    ds.write(0xCC); //Обращение ко всем датчикам
-    ds.write(0x44); //Команда на конвертацию
-  }
-  else {
-    byte i;
-     int temp;
-    for (i = 0; i < 2; i++){ //Перебор количества датчиков
-     ds.reset();
-     ds.select(addr[i]);
-     ds.write(0xBE); //Считывание значения с датчика
-     temp = (ds.read() | ds.read()<<8); //Принимаем два байта температуры
-     Temp[i] = (float)temp / 16.0;
-     }
-   }
+    static boolean flagDall = 0; //Признак операции
+    prevTime = millis();
+    flagDall =! flagDall; //Инверсия признака
+    if (flagDall) {
+      ds.reset();
+      ds.write(0xCC); //Обращение ко всем датчикам
+      ds.write(0x44); //Команда на конвертацию
+    }
+    else {
+      byte j; //индекс столбца массива temp_unfiltered - выбор датчика
+      
+      //Перебор количества датчиков - выбираем столбец массива temp_unfiltered[i][j]
+      for (j = 0; j < 2; j++){ 
+        ds.reset();
+        ds.select(addr[j]);
+        ds.write(0xBE); //Считывание значения с датчика
+        //переключаем индекс строки с 0 до 2 (0, 1, 2, 0, 1, 2…)
+        if (++i >2) i = 0; 
+        //Принимаем два байта температуры и пишем их в массив
+        temp_unfiltered[i][j] = (ds.read() | ds.read()<<8);
+        //производим фильтрацию по каждому столбцу значений массива temp_unfiltered
+        temp_filtered = middle_of_3 (temp_unfiltered[0][j], temp_unfiltered[1][j], temp_unfiltered[2][j]);
+        
+        //В массив Temp заносим отфильтрованные значения с каждого датчика
+        Temp[j] = (float)temp_filtered / 16.0;
+        
+        /*
+        Serial.print("Sensor_");
+        Serial.print(j);
+        Serial.print(";");
+        Serial.print ((float)temp_unfiltered[i][j] / 16.0);
+        Serial.print (";");
+        Serial.println (Temp[j]);
+        */
+
+      }
+    }
   }
 }
 //--------------------------------------------------
@@ -97,7 +136,9 @@ void relay_control (int rel_ID, int state) {
 
 
 void loop() {
-  long time, dist;
+  unsigned int time_filtered, dist;
+  static unsigned int time_unfiltered[3];
+  static byte i;
   static unsigned long prev_pulse_send = 0;
   static unsigned long prev_mqtt_send = 0;
   static unsigned long prev_thingspeak_send = 0;
@@ -110,13 +151,16 @@ void loop() {
     digitalWrite(trig, HIGH);
     delayMicroseconds(10);
     digitalWrite(trig, LOW);
-    time = pulseIn(echo, HIGH);
-    dist = (time/2) / 29.1;
+    
+    if (++i > 2) i = 0;
+    time_unfiltered [i] = pulseIn(echo, HIGH);
+    time_filtered = middle_of_3(time_unfiltered [0], time_unfiltered [1], time_unfiltered [2]);
+    
+    dist = (time_filtered/2) / 29.1;
   }
 
 
-  dallRead(2000);
-
+  dallRead(1000);
 
   //переключение реле по уровню жидкости
   if (dist < dist_min && dist > 0) relay_control (1,LOW);
@@ -137,6 +181,8 @@ void loop() {
     Serial.print (F("Publish /ESP_Easy_garage/sensors/temperature_02/,"));
     Serial.println (String(Temp[1]));
   }
+
+
 /*
   if (millis() - prev_lcd_send > lcd_interval) {
     lcd.clear();
@@ -145,6 +191,8 @@ void loop() {
     else lcd.print(dist);
   }
 */
+
+
   if (millis() - prev_thingspeak_send > thingspeak_interval) {
     prev_thingspeak_send = millis();
     if (dist > 500 or dist <= 0) dist = -10;
@@ -155,4 +203,6 @@ void loop() {
     Serial.print(F("&field3="));
     Serial.println(String(Temp[1]));
   }
+
+
 }
