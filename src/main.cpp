@@ -39,6 +39,36 @@ byte addr[2][8] = {{0x28,0xFF,0x85,0xD0,0x90,0x15,0x01,0x35},{0x28,0xD5,0xBF,0x7
 float Temp[2];
 //
 
+#define PARSE_AMOUNT 2         // число значений в массиве, который хотим получить
+unsigned int intData[PARSE_AMOUNT];     // массив численных значений после парсинга
+boolean recievedFlag;
+boolean getStarted;
+byte index;
+String string_convert = "";
+
+void parsing() {
+  if (Serial.available() > 0) {
+    char incomingByte = Serial.read();        // обязательно ЧИТАЕМ входящий символ
+    if (getStarted) {                         // если приняли начальный символ (парсинг разрешён)
+      if (incomingByte != ' ' && incomingByte != ';') {   // если это не пробел И не конец
+        string_convert += incomingByte;       // складываем в строку
+      } else {                                // если это пробел или ; конец пакета
+        intData[index] = string_convert.toInt();  // преобразуем строку в int и кладём в массив
+        string_convert = "";                  // очищаем строку
+        index++;                              // переходим к парсингу следующего элемента массива
+      }
+    }
+    if (incomingByte == '$') {                // если это $
+      getStarted = true;                      // поднимаем флаг, что можно парсить
+      index = 0;                              // сбрасываем индекс
+      string_convert = "";                    // очищаем строку
+    }
+    if (incomingByte == ';') {                // если таки приняли ; - конец парсинга
+      getStarted = false;                     // сброс
+      recievedFlag = true;                    // флаг на принятие
+    }
+  }
+}
 
 // медианный фильтр по трем значениям
 float middle_of_3(int a, int b, int c) {
@@ -209,6 +239,20 @@ void loop() {
     Serial.print(String(Temp[0]));
     Serial.print(F("&field3="));
     Serial.println(String(Temp[1]));
+  }
+
+  parsing();       // функция парсинга
+  if (recievedFlag) {                           // если получены данные
+    recievedFlag = false;
+    if (intData[0] > 10 && intData[0] < intData[1] && intData[0]) dist_min = intData[0];
+    else Serial.println (F("Publish /ESP_Easy_garage/debug/,Wrong dist_min or dist_max value!"));
+    if (intData[1] > 10 && intData[1] > intData[0] && intData[1] < 200 && intData[1] > dist_min) dist_max = intData[1];
+    else Serial.println (F("Publish /ESP_Easy_garage/debug/,Wrong dist_min or dist_max value!"));
+
+    Serial.print (F("Publish /ESP_Easy_garage/debug/,dist_min:"));
+    Serial.println (dist_min);
+    Serial.print (F("Publish /ESP_Easy_garage/debug/,dist_max:"));
+    Serial.println (dist_max);
   }
 
 
