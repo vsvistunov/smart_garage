@@ -17,8 +17,8 @@ const int rel_01 = 3;
 const int rel_02 = 4;
 
 //максимальный и минимальный уровни жидости
-const long dist_max = 30;
-const long dist_min = 20;
+unsigned int dist_max = 30;
+unsigned int dist_min = 20;
 
 //максимальный и минимальный уровни температуры
 const float temp_max = 30;
@@ -136,7 +136,7 @@ void relay_control (int rel_ID, int state) {
 
 
 void loop() {
-  unsigned int time_filtered, dist;
+  unsigned int time_filtered, dist, level;
   static unsigned int time_unfiltered[3];
   static byte i;
   static unsigned long prev_pulse_send = 0;
@@ -152,11 +152,16 @@ void loop() {
     delayMicroseconds(10);
     digitalWrite(trig, LOW);
     
+    //меняем индекс массива 0..1..2..0..1..2..0..1..
     if (++i > 2) i = 0;
+    //запоминаем в массив измеренное эхо
     time_unfiltered [i] = pulseIn(echo, HIGH);
+    //производим фильтрацию значений массива time_unfiltered
     time_filtered = middle_of_3(time_unfiltered [0], time_unfiltered [1], time_unfiltered [2]);
-    
+    //вычисяем расстояние до объекта
     dist = (time_filtered/2) / 29.1;
+    //вычисляем процентный уровень
+    level = constrain (map (dist, dist_max, dist_min, 0, 100), 0, 100);
   }
 
 
@@ -176,6 +181,8 @@ void loop() {
     if (dist > 500 or dist <= 0) dist = -10;
     Serial.print (F("Publish /ESP_Easy_garage/sensors/distance/,"));
     Serial.println (String(dist));
+    Serial.print (F("Publish /ESP_Easy_garage/sensors/level/,"));
+    Serial.println (String(level));
     Serial.print (F("Publish /ESP_Easy_garage/sensors/temperature_01/,"));
     Serial.println (String(Temp[0]));
     Serial.print (F("Publish /ESP_Easy_garage/sensors/temperature_02/,"));
