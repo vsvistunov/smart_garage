@@ -1,5 +1,6 @@
 #include <Arduino.h>
 #include <OneWire.h>
+#include <EEPROM.h>
 
 //#include <Wire.h>
 //#include <LiquidCrystal_I2C.h>
@@ -16,14 +17,19 @@ const int echo = 7;
 const int rel_01 = 3;
 const int rel_02 = 4;
 
+
+
+unsigned int dist_min_address = 0;
+unsigned int dist_max_address = 1;
 //максимальный и минимальный уровни жидости
-unsigned int dist_max = 30;
-unsigned int dist_min = 20;
+byte dist_min = 0;
+byte dist_max = 0;
 
 //максимальный и минимальный уровни температуры
 const float temp_max = 30;
 const float temp_min = 26;
 
+String stringPublish = "Publish /ESP_Easy_garage";
 
 //интервал отправки данных по mqtt (default = 5000 ms)
 const long mqtt_interval = 5000;
@@ -139,6 +145,10 @@ void dallRead(unsigned long interval){
 
 void setup() {
   // put your setup code here, to run once:
+  dist_min = EEPROM.read(0);
+  dist_max = EEPROM.read(1);
+
+
   pinMode(trig, OUTPUT);
   pinMode(echo, INPUT);
 
@@ -209,13 +219,17 @@ void loop() {
   if (millis() - prev_mqtt_send > mqtt_interval) {
     prev_mqtt_send = millis();
     if (dist > 500 or dist <= 0) dist = -10;
-    Serial.print (F("Publish /ESP_Easy_garage/sensors/distance/,"));
+    Serial.print(stringPublish);
+    Serial.print (F("/sensors/distance/,"));
     Serial.println (String(dist));
-    Serial.print (F("Publish /ESP_Easy_garage/sensors/level/,"));
+    Serial.print(stringPublish);
+    Serial.print (F("/sensors/level/,"));
     Serial.println (String(level));
-    Serial.print (F("Publish /ESP_Easy_garage/sensors/temperature_01/,"));
+    Serial.print(stringPublish);
+    Serial.print (F("/sensors/temperature_01/,"));
     Serial.println (String(Temp[0]));
-    Serial.print (F("Publish /ESP_Easy_garage/sensors/temperature_02/,"));
+    Serial.print(stringPublish);
+    Serial.print (F("/sensors/temperature_02/,"));
     Serial.println (String(Temp[1]));
   }
 
@@ -244,16 +258,25 @@ void loop() {
   parsing();       // функция парсинга
   if (recievedFlag) {                           // если получены данные
     recievedFlag = false;
-    if (intData[0] > 10 && intData[0] < intData[1] && intData[0]) dist_min = intData[0];
-    else Serial.println (F("Publish /ESP_Easy_garage/debug/,Wrong dist_min or dist_max value!"));
-    if (intData[1] > 10 && intData[1] > intData[0] && intData[1] < 200 && intData[1] > dist_min) dist_max = intData[1];
-    else Serial.println (F("Publish /ESP_Easy_garage/debug/,Wrong dist_min or dist_max value!"));
+    if (intData[0] >= 10 && intData[0] < 200 && intData[1] > 10 && intData[1] < 200 && intData[0] < intData[1]) {
+      dist_min = intData[0];
+      dist_max = intData[1];
 
-    Serial.print (F("Publish /ESP_Easy_garage/debug/,dist_min:"));
-    Serial.println (dist_min);
-    Serial.print (F("Publish /ESP_Easy_garage/debug/,dist_max:"));
-    Serial.println (dist_max);
+      EEPROM.write(0,dist_min);
+      EEPROM.write(1,dist_max);
+      
+      Serial.print(stringPublish);
+      Serial.print (F("/debug/,wr_to_EEPROM_dist_min/max:"));
+      Serial.print (dist_min);
+      Serial.print (F("/"));
+      Serial.println (dist_max);
+    }
+    else {
+      Serial.print(stringPublish);
+      Serial.println (F("/debug/,ERR_dist_min/max"));
+    }
+    
+
   }
-
 
 }
