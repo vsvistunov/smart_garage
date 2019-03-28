@@ -1,3 +1,21 @@
+/*
+Топики показаний:
+/ESP_Easy_garage/sensors/distance/        - расстояние до препятствия в см
+/ESP_Easy_garage/sensors/level/           - процентное выражение уровня ()
+/ESP_Easy_garage/sensors/temperature_01/  - температура наружнего датчика
+/ESP_Easy_garage/sensors/temperature_02/  - температура внутреннего датчика
+
+Настройка мин/макс уровня - послать в uart строку вида "$<min_value> <max_value>;""
+Символ "$" - начало команды, значения разделяются пробелами, в конце ставится символ ";".
+Можно послать из интерфейса ESPEasy командой "SerialSend $<min_value> <max_value>;""
+Например команда "SerialSend $40 50;" задаст мин/макс уровни 40 и 50 см.
+Принятые значения записываются в dist_min и dist_max и сохраняются в EEPROM.
+
+
+*/
+
+
+
 #include <Arduino.h>
 #include <OneWire.h>
 #include <EEPROM.h>
