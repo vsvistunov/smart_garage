@@ -1,9 +1,9 @@
 /*
 Топики показаний:
-/ESP_Easy_garage/sensors/distance/        - расстояние до препятствия в см
-/ESP_Easy_garage/sensors/level/           - процентное выражение уровня ()
-/ESP_Easy_garage/sensors/temperature_01/  - температура наружнего датчика
-/ESP_Easy_garage/sensors/temperature_02/  - температура внутреннего датчика
+/smart_garage/sensors/dist/        - расстояние до препятствия в см
+/smart_garage/sensors/level/           - процентное выражение уровня ()
+/smart_garage/sensors/temp_01/  - температура наружнего датчика
+/smart_garage/sensors/temp_02/  - температура внутреннего датчика
 
 Настройка мин/макс уровня - послать в uart строку вида "$<min_value> <max_value>;""
 Символ "$" - начало команды, значения разделяются пробелами, в конце ставится символ ";".
@@ -47,7 +47,7 @@ byte dist_max = 0;
 const float temp_max = 30;
 const float temp_min = 26;
 
-String stringPublish = "Publish /ESP_Easy_garage";
+String stringPublish = "Publish /smart_garage";
 
 //интервал отправки данных по mqtt (default = 5000 ms)
 const long mqtt_interval = 5000;
@@ -238,17 +238,17 @@ void loop() {
     prev_mqtt_send = millis();
     if (dist > 500 or dist <= 0) dist = -10;
     Serial.print(stringPublish);
-    Serial.print (F("/sensors/distance/,"));
-    Serial.println (String(dist));
+    Serial.print (F("/sensors/dist/,"));
+    Serial.println(dist);
     Serial.print(stringPublish);
     Serial.print (F("/sensors/level/,"));
-    Serial.println (String(level));
+    Serial.println (level);
     Serial.print(stringPublish);
-    Serial.print (F("/sensors/temperature_01/,"));
-    Serial.println (String(Temp[0]));
+    Serial.print (F("/sensors/temp_01/,"));
+    Serial.println (Temp[0],1);
     Serial.print(stringPublish);
-    Serial.print (F("/sensors/temperature_02/,"));
-    Serial.println (String(Temp[1]));
+    Serial.print (F("/sensors/temp_02/,"));
+    Serial.println (Temp[1],1);
   }
 
 
@@ -266,11 +266,13 @@ void loop() {
     prev_thingspeak_send = millis();
     if (dist > 500 or dist <= 0) dist = -10;
     Serial.print(F("SendToHTTP 18.214.44.70,80,/update?api_key=JXQQ3PQWSTJK87EY&field1="));
-    Serial.print(String(dist));
+    Serial.print(dist);
     Serial.print(F("&field2="));
-    Serial.print(String(Temp[0]));
+    Serial.print(level);
     Serial.print(F("&field3="));
-    Serial.println(String(Temp[1]));
+    Serial.print(Temp[0],1);
+    Serial.print(F("&field4="));
+    Serial.println(Temp[1],1);
   }
 
   parsing();       // функция парсинга
