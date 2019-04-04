@@ -44,8 +44,8 @@ byte dist_min = 0;
 byte dist_max = 0;
 
 //максимальный и минимальный уровни температуры
-const float temp_max = 30;
-const float temp_min = 26;
+const float temp_max = 5;
+const float temp_min = 3;
 
 String stringPublish = "Publish /smart_garage";
 
@@ -265,7 +265,7 @@ void loop() {
   if (millis() - prev_thingspeak_send > thingspeak_interval) {
     prev_thingspeak_send = millis();
     if (dist > 500 or dist <= 0) dist = -10;
-    Serial.print(F("SendToHTTP 18.214.44.70,80,/update?api_key=JXQQ3PQWSTJK87EY&field1="));
+    Serial.print(F("SendToHTTP api.thingspeak.com,80,/update?api_key=JXQQ3PQWSTJK87EY&field1="));
     Serial.print(dist);
     Serial.print(F("&field2="));
     Serial.print(level);
@@ -275,8 +275,8 @@ void loop() {
     Serial.println(Temp[1],1);
   }
 
-  parsing();       // функция парсинга
-  if (recievedFlag) {                           // если получены данные
+  parsing();            // функция парсинга
+  if (recievedFlag) {   // если получены данные
     recievedFlag = false;
     if (intData[0] >= 10 && intData[0] < 200 && intData[1] > 10 && intData[1] < 200 && intData[0] < intData[1]) {
       dist_min = intData[0];
@@ -295,8 +295,5 @@ void loop() {
       Serial.print(stringPublish);
       Serial.println (F("/debug/,ERR_dist_min/max"));
     }
-    
-
   }
-
 }
